@@ -2,9 +2,9 @@ name: Deploy-gorzdrav_spb_checkbot
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
 
 jobs:
   Deploy_scheduler:
