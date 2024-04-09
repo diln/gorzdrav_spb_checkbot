@@ -22,16 +22,16 @@ class GorzdravSpbAPI:
     """
     
     def __init__(self):
-        self._districts_url = "https://gorzdrav.spb.ru/_api/api/v2/shared/districts"
+        self._districts_url = "https://gzsb.dixnet3.keenetic.pro/_api/api/v2/shared/districts"
 
     def get_hospitals_url(self, district_id: int) -> str:
-        return f"https://gorzdrav.spb.ru/_api/api/v2/shared/district/{district_id}/lpus"
+        return f"https://gzsb.dixnet3.keenetic.pro/_api/api/v2/shared/district/{district_id}/lpus"
 
     def get_specialities_url(self, hospital_id: int) -> str:
-        return f"https://gorzdrav.spb.ru/_api/api/v2/schedule/lpu/{hospital_id}/specialties"
+        return f"https://gzsb.dixnet3.keenetic.pro/_api/api/v2/schedule/lpu/{hospital_id}/specialties"
 
     def get_doctors_url(self, hospital_id: int, speciality_id: int) -> str:
-        link = f"https://gorzdrav.spb.ru/_api/api/v2/schedule/lpu/{hospital_id}/speciality/{speciality_id}/doctors"
+        link = f"https://gzsb.dixnet3.keenetic.pro/_api/api/v2/schedule/lpu/{hospital_id}/speciality/{speciality_id}/doctors"
         return link
 
     @property
