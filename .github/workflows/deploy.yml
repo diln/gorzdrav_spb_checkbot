@@ -30,7 +30,7 @@ jobs:
           docker build . -t gorzdrav_spb_checkbot
           docker stop $CONTAINER_NAME || true
           docker rm $CONTAINER_NAME || true
-          docker run -d --restart unless-stopped --name $CONTAINER_NAME -e bot_token="$TELEGRAM_BOT_TOKEN" gorzdrav_spb_checkbot
+          docker run -d --restart unless-stopped --name $CONTAINER_NAME -e bot_token="$BOT_TOKEN" gorzdrav_spb_checkbot
           sleep 3
           docker logs $CONTAINER_NAME 2>&1 | grep 'Bot started'
           
