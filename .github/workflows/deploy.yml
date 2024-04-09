@@ -23,7 +23,7 @@ jobs:
         password: ${{ secrets.DEPLOY_SERVER_PASSWORD }}
         port: ${{ secrets.DEPLOY_SERVER_PORT }}
         script_stop: true
-        envs: TELEGRAM_BOT_TOKEN,CONTAINER_NAME
+        envs: BOT_TOKEN,CONTAINER_NAME
         script: |
           cd /opt/gorzdrav_spb_checkbot
           git pull
