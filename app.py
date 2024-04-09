@@ -5,6 +5,8 @@ import json
 import modules.validate
 import modules.net
 import modules.db
+import sys
+import logging
 
 import multiprocessing
 
@@ -22,6 +24,7 @@ def start_message(message):
     # удаляем и создаем пользователя заного
     db.del_user(user_id)
     db.add_user(user_id)
+    logging.info('Ваш профиль создан.')
     bot.reply_to(message, 'Ваш профиль создан.')
 
 @bot.message_handler(commands=['help'])
@@ -38,6 +41,7 @@ def get_help(message):
 
 @bot.message_handler(commands=['id'])
 def id_message(message):
+    logging.info(f'Ваш id: {message.chat.id}')
     bot.send_message(message.chat.id, 'Ваш id: ' + str(message.chat.id))
 
 @bot.message_handler(commands=['on'])
@@ -45,6 +49,7 @@ def ping_on(message):
     user_id = message.from_user.id
     db = modules.db.SqliteDb(file=Config.db_file)
     db.set_user_ping(user_id)
+    logging.info('Проверка включена')
     bot.reply_to(message, 'Проверка включена')
 
 @bot.message_handler(commands=['off'])
@@ -52,6 +57,7 @@ def ping_off(message):
     user_id = message.from_user.id
     db = modules.db.SqliteDb(file=Config.db_file)
     db.clear_user_ping(user_id)
+    logging.info('Проверка выключена')
     bot.reply_to(message, 'Проверка выключена')
 
 @bot.message_handler(commands=['status'])
@@ -60,6 +66,7 @@ def get_status(message):
     db = modules.db.SqliteDb(file=Config.db_file)
     doctor_params = db.get_user_doctor(user_id)
     if not doctor_params:
+        logging.info('Вы еще не добавили врача\nПришлите боту ссылку с сайта https://gorzdrav.spb.ru/ с врачем.')
         bot.reply_to(message, 'Вы еще не добавили врача\nПришлите боту ссылку с сайта https://gorzdrav.spb.ru/ с врачем.')
         return
     else:
@@ -76,6 +83,7 @@ def get_status(message):
             if doctor:
                 checked = db.get_user_ping_status(user_id=user_id)
                 text = f"{doctor}\nСтатус проверки: {'Вкл' if checked else 'Откл'}"
+                logging.info(text)
                 bot.reply_to(message, text)
             else:
                 bot.reply_to(message, 'Врач не найден')
@@ -86,6 +94,7 @@ def get_status(message):
 )
 def get_text_messages(message):
     text = message.text
+    logging.info(f'url detected\n{text}')
     bot.reply_to(message, "url detected\n"+text)
     parse_result = gorzdrav.url_parse(text)
     user_id = message.from_user.id
@@ -97,6 +106,7 @@ def get_text_messages(message):
         db.add_user_doctor(user_id, doctor_id=doc_id)
         doctor_ids = db.get_user_doctor(user_id)
         if not doctor_ids:
+            logging.info('Доктор не найден на сайте горздрава. Проверьте ссылки.')
             bot.reply_to(message, "Доктор не найден на сайте горздрава. Проверьте ссылки.")
             return
         doctor = gorzdrav.get_doctor(
@@ -104,8 +114,10 @@ def get_text_messages(message):
             speciality_id=doctor_ids.get('speciality_id'), 
             hospital_id=doctor_ids.get('hospital_id')
         )
+        logging.info(f"к вам добавлен врач: {doctor}")
         bot.reply_to(message, f"к вам добавлен врач: {doctor}")
     else:
+        logging.info('не удалось получить данные из ссылки')
         bot.reply_to(message, "не удалось получить данные из ссылки")
 
 
@@ -131,15 +143,15 @@ def checker(bot_token,  db_file, timeout_secs=60):
     :param timeout_secs: timeout for checking in seconds
     :return: None
     """
-    print("checker process started")
+    logging.info("checker process started")
     gorzdrav = modules.net.GorzdravSpbAPI()
     db = modules.db.SqliteDb(file=db_file)
 
     while True:
         try:
-            print(f"checker iteration")
+            logging.debug(f"checker iteration")
             doctors_dicts = db.get_active_doctors()
-            print(doctors_dicts)
+            logging.debug(doctors_dicts)
             for d in doctors_dicts:
                 doc = gorzdrav.get_doctor(**d)
                 if doc and doc.is_free:
@@ -147,12 +159,13 @@ def checker(bot_token,  db_file, timeout_secs=60):
                     doc_users = db.get_users_by_doctor(doc_db_id)
                     if not doc_users:
                         continue
-                    print(f"{doc_users = }")
+                    logging.debug(f"{doc_users = }")
                     text = f"{doc}"
                     for u in doc_users:
                         send_message(message=text, api_token=bot_token, chat_id = u)
                         time.sleep(0.1)
         except Exception as e:
+            logging.info(str(e))
             print(str(e))
             
         time.sleep(timeout_secs)
@@ -160,14 +173,22 @@ def checker(bot_token,  db_file, timeout_secs=60):
 
 
 if __name__ == "__main__":
-    print("Bot start")
-    print("Bot username: " + str(bot.get_me().username))
-    print("Bot id: " + str(bot.get_me().id))
-    print("Bot first_name: " + bot.get_me().first_name)
-    print("Bot can_join_groups: " + str(bot.get_me().can_join_groups))
-    print("Bot can_read_all_group_messages: " + str(bot.get_me().can_read_all_group_messages))
-    print("Bot supports_inline_queries: " + str(bot.get_me().supports_inline_queries))
-    print("Bot started")
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[
+            logging.FileHandler("app.log"),
+            logging.StreamHandler()
+        ]
+    )
+    logging.info("Bot starting..")
+    logging.info("Bot username: " + str(bot.get_me().username))
+    logging.info("Bot id: " + str(bot.get_me().id))
+    logging.info("Bot first_name: " + bot.get_me().first_name)
+    logging.info("Bot can_join_groups: " + str(bot.get_me().can_join_groups))
+    logging.info("Bot can_read_all_group_messages: " + str(bot.get_me().can_read_all_group_messages))
+    logging.info("Bot supports_inline_queries: " + str(bot.get_me().supports_inline_queries))
+    logging.info("Bot started")
 
     # запускаем процесс с отправкой уведомлений
     checker = multiprocessing.Process(
