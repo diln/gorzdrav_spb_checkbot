@@ -202,4 +202,9 @@ if __name__ == "__main__":
     )
     checker.start()
 
-    bot.polling(none_stop=True)
+    while True:
+        try:
+            bot.polling(none_stop=True)
+        except Exception as _ex:
+            print(_ex)
+            time.sleep(120)
